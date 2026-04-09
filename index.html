@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amazon Pay - Version 2.1.1</title>
+    <title>Amazon Pay - v2.1.2</title>
     <link rel="icon" type="image/png" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKMIAlQeY5jFr8rjj6bV8QT9RAvnViGp0CBw&s">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -17,9 +17,15 @@
         .pay-card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 12px; }
         .service-icon { width: 48px; height: 48px; object-fit: contain; margin-bottom: 6px; }
         
+        /* Form Styling */
         input { border: 1px solid #a6a6a6; border-radius: 4px; padding: 10px; width: 100%; font-size: 14px; outline: none; }
         input:focus { border-color: #e47911; box-shadow: 0 0 3px rgba(228, 121, 17, 0.5); }
+        .custom-select-box { position: relative; border: 1px solid #a6a6a6; border-radius: 4px; padding: 12px; cursor: pointer; background: white; }
+        .dropdown-menu { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #a6a6a6; border-top: none; z-index: 50; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .dropdown-item { padding: 12px; font-size: 15px; border-bottom: 1px solid #eee; }
+        .error-popup { border-top: 4px solid #d0021b; box-shadow: 0 2px 4px rgba(0,0,0,0.13); }
 
+        /* Animations */
         .amazon-spinner {
             width: 40px; height: 40px; border: 3px solid #eee; border-top: 3px solid #e47911;
             border-radius: 50%; animation: spin 0.8s linear infinite;
@@ -31,7 +37,7 @@
 </head>
 <body class="pb-20">
 
-    <header class="amazon-dark text-white px-4 py-3 flex justify-between items-center">
+    <header id="mainHeader" class="amazon-dark text-white px-4 py-3 flex justify-between items-center">
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Amazon_Pay_logo.svg/960px-Amazon_Pay_logo.svg.png" class="h-5 brightness-0 invert" alt="Amazon Pay">
         <div class="text-right">
             <p class="text-[10px] text-gray-400 uppercase">Balance</p>
@@ -39,11 +45,12 @@
         </div>
     </header>
 
+    <div id="locationBar" class="amazon-secondary text-[11px] text-white py-2 px-4 flex items-center gap-2">
+        <svg class="w-3 h-3 fill-red-400" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <span>Mumbai 400001</span>
+    </div>
+
     <div id="viewDashboard">
-        <div class="amazon-secondary text-[11px] text-white py-2 px-4 flex items-center gap-2">
-            <svg class="w-3 h-3 fill-red-400" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-            <span>Mumbai 400001</span>
-        </div>
         <main class="max-w-md mx-auto p-3">
             <div class="pay-card p-4">
                 <h3 class="text-sm font-bold mb-4">Recharge & Pay Bills</h3>
@@ -69,6 +76,49 @@
         </main>
     </div>
 
+    <div id="viewRecharge" class="hidden min-h-screen bg-white">
+        <div class="p-4 flex items-center gap-3 border-b">
+            <button onclick="showView('viewDashboard')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+            <h2 class="font-bold">Mobile Recharge</h2>
+        </div>
+        
+        <div id="validationAlert" class="hidden mx-5 mt-4 p-4 bg-white border error-popup flex items-start gap-3">
+            <svg class="w-6 h-6 fill-red-600 flex-shrink-0" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            <div class="text-xs">
+                <p class="font-bold text-red-600">Action Required</p>
+                <p>Enter a valid 10-digit mobile number.</p>
+            </div>
+        </div>
+
+        <div class="p-5 space-y-5">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Mobile Number</label>
+                <input type="tel" id="mobileInput" maxlength="10" placeholder="Enter 10-digit mobile number">
+            </div>
+            <div class="relative">
+                <label class="block text-sm font-bold text-gray-700 mb-1">Operator & Circle</label>
+                <div class="custom-select-box flex justify-between items-center" onclick="toggleDropdown(event)">
+                    <span id="selectedDisplay" class="text-sm text-gray-700">Select operator</span>
+                    <span class="text-blue-600 text-xs font-bold">EDIT</span>
+                    <div id="operatorDropdown" class="dropdown-menu hidden">
+                        <div class="dropdown-item" onclick="selectOperator('Airtel - Mumbai', 'airtel')">Airtel - Mumbai</div>
+                        <div class="dropdown-item" onclick="selectOperator('Jio - Mumbai', 'jio')">Jio - Mumbai</div>
+                        <div class="dropdown-item" onclick="selectOperator('Vi - Mumbai', 'vi')">Vi - Mumbai</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 flex border-b border-gray-200 px-5 text-[11px] font-bold text-gray-500 uppercase overflow-x-auto">
+            <button onclick="switchTab('recommended', this)" class="pb-2 px-3 tab-active whitespace-nowrap">Recommended</button>
+            <button onclick="switchTab('unlimited', this)" class="pb-2 px-5 whitespace-nowrap">Unlimited</button>
+            <button onclick="switchTab('data', this)" class="pb-2 px-5 whitespace-nowrap">Data Add-On</button>
+        </div>
+        <div class="p-5 space-y-4" id="plansContainer">
+            <p class="text-center text-gray-400 text-sm py-10">Select an operator to see plans</p>
+        </div>
+    </div>
+
     <div id="viewSendMoney" class="hidden min-h-screen bg-white">
         <div class="p-4 flex items-center gap-3 border-b">
             <button onclick="showView('viewDashboard')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
@@ -92,51 +142,23 @@
         </div>
     </div>
 
-    <div id="viewUPITransfer" class="hidden min-h-screen bg-white">
-        <div class="p-4 flex items-center gap-3 border-b">
-            <button onclick="showView('viewSendMoney')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
-            <h2 class="font-bold">Send to UPI</h2>
-        </div>
+    <div id="viewUPITransfer" class="hidden bg-white min-h-screen">
+        <div class="p-4 flex items-center gap-3 border-b"><button onclick="showView('viewSendMoney')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button><h2 class="font-bold">Send to UPI</h2></div>
         <div class="p-5 space-y-5">
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1">Enter UPI ID or Mobile Number</label>
-                <input type="text" id="upiTarget" placeholder="e.g. 9876543210 or name@apl">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1">Amount</label>
-                <input type="number" id="upiAmount" placeholder="₹ Enter Amount">
-            </div>
-            <button onclick="processTransfer('upi')" class="w-full amazon-orange py-3 rounded font-bold">Continue</button>
+            <input type="text" id="upiTarget" placeholder="e.g. 9876543210 or name@apl">
+            <input type="number" id="upiAmount" placeholder="₹ Enter Amount">
+            <button onclick="processMoney('upi')" class="w-full amazon-orange py-3 rounded font-bold">Continue</button>
         </div>
     </div>
 
-    <div id="viewBankTransfer" class="hidden min-h-screen bg-white">
-        <div class="p-4 flex items-center gap-3 border-b">
-            <button onclick="showView('viewSendMoney')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
-            <h2 class="font-bold">Bank Transfer</h2>
-        </div>
+    <div id="viewBankTransfer" class="hidden bg-white min-h-screen">
+        <div class="p-4 flex items-center gap-3 border-b"><button onclick="showView('viewSendMoney')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button><h2 class="font-bold">Bank Transfer</h2></div>
         <div class="p-5 space-y-4">
             <input type="number" id="bankAcc" placeholder="Account Number">
-            <input type="number" id="bankAccRe" placeholder="Re-enter Account Number">
             <input type="text" id="bankIfsc" placeholder="IFSC Code" class="uppercase">
             <input type="text" id="bankName" placeholder="Account Holder Name">
             <input type="number" id="bankAmount" placeholder="₹ Amount">
-            <button onclick="processTransfer('bank')" class="w-full amazon-orange py-3 rounded font-bold">Proceed to Pay</button>
-        </div>
-    </div>
-
-    <div id="viewRecharge" class="hidden min-h-screen bg-white">
-        <div class="p-4 flex items-center gap-3 border-b">
-            <button onclick="showView('viewDashboard')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
-            <h2 class="font-bold">Mobile Recharge</h2>
-        </div>
-        <div class="p-5">
-            <input type="tel" id="mobNum" placeholder="10-digit number" maxlength="10" class="mb-4">
-            <div id="planList" class="space-y-3">
-                <div onclick="openPaymentSheet('Mobile Recharge', '₹239')" class="border p-4 rounded flex justify-between items-center">
-                    <span>₹239 - 1.5GB/Day</span><span class="text-blue-600 font-bold">SELECT</span>
-                </div>
-            </div>
+            <button onclick="processMoney('bank')" class="w-full amazon-orange py-3 rounded font-bold">Proceed to Pay</button>
         </div>
     </div>
 
@@ -150,14 +172,17 @@
 
     <div id="paySheet" class="fixed inset-0 bg-black bg-opacity-60 z-[100] hidden flex items-end">
         <div class="bg-white w-full max-w-md mx-auto rounded-t-2xl p-6 slide-up">
-            <h3 class="font-bold text-lg" id="psTitle">Pay</h3>
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-lg" id="psTitle">Pay</h3>
+                <button onclick="document.getElementById('paySheet').classList.add('hidden')" class="text-2xl text-gray-400">&times;</button>
+            </div>
             <p class="text-2xl font-bold mb-6" id="psAmt">₹0</p>
             <div class="flex items-center gap-3 p-4 border-2 border-[#e47911] bg-orange-50 rounded-lg">
                 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKMIAlQeY5jFr8rjj6bV8QT9RAvnViGp0CBw&s" class="h-6">
                 <div class="flex-1 text-sm font-bold">Amazon Pay UPI</div>
                 <input type="radio" checked class="accent-[#e47911] w-5 h-5">
             </div>
-            <button onclick="executeFinal()" class="w-full amazon-orange py-4 rounded font-bold mt-8 shadow-md">Pay Now</button>
+            <button onclick="triggerPaymentFlow()" class="w-full amazon-orange py-4 rounded font-bold mt-8 shadow-md">Pay Now</button>
         </div>
     </div>
 
@@ -171,34 +196,160 @@
             <div class="w-20 h-20 bg-[#007600] rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg class="w-12 h-12 fill-white" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             </div>
-            <h2 class="text-2xl font-bold">Transfer Successful</h2>
+            <h2 class="text-2xl font-bold" id="succMsg">Successful</h2>
             <div class="mt-4 text-4xl font-bold" id="succAmt">₹0</div>
             <div class="p-6 mt-8">
                 <div class="bg-gray-50 p-6 rounded border text-left space-y-3">
-                    <div class="flex justify-between text-sm"><span>To</span><span class="font-bold" id="succTo">--</span></div>
-                    <div class="flex justify-between text-sm"><span>Transaction ID</span><span class="font-bold">AMZ83920112</span></div>
+                    <div class="flex justify-between text-sm"><span>Reference</span><span class="font-bold" id="succRef">--</span></div>
+                    <div class="flex justify-between text-sm"><span>Status</span><span class="font-bold text-green-700">Confirmed</span></div>
                 </div>
                 <button onclick="window.location.reload()" class="w-full amazon-orange py-4 rounded font-bold mt-10">Done</button>
             </div>
         </div>
     </div>
 
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-2 flex justify-between items-center max-w-md mx-auto text-[10px] font-bold text-gray-400">
+        <div onclick="showView('viewDashboard')" class="flex flex-col items-center gap-1"><svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><p>Home</p></div>
+        <div class="flex flex-col items-center gap-1 text-[#e47911]"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKMIAlQeY5jFr8rjj6bV8QT9RAvnViGp0CBw&s" class="w-5 h-5"><p>Amazon Pay</p></div>
+        <div class="flex flex-col items-center gap-1"><svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg><p>Cart</p></div>
+        <div class="flex flex-col items-center gap-1"><svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg><p>Menu</p></div>
+    </nav>
+
     <script>
-        let globalTarget = "";
+        let currentTab = 'recommended';
+        let currentOperator = null;
         let globalAmount = "";
+        let globalTarget = "";
+        let globalMode = "Recharge"; // Recharge, UPI, Bank, Sub
 
-        const subs = [
-            { name: "Zomato Gold", price: "₹599", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwugYjkStrKCv4hgND62XXlNMsVG4uXEmj9A&s" },
-            { name: "Amazon Music", price: "₹99", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSZ0i30X3lujSPpfFHJPmbcAehSf63jxqPzzg&s" },
-            { name: "Prime Video", price: "₹1,499", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6-tJozVRNuVzG6JiAJaVcIe6BI8WhUPf6gA&s" },
-            { name: "AWS Pro", price: "₹2,100", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1emPM3lvqT08lRlyOhcGj8Gc_xB7UfU98Fg&s" }
-        ];
+        // RECHARGE LOGIC
+        const generatePlans = (op) => {
+            const standardData = ["1.5 GB/day", "2 GB/day", "2.5 GB/day", "1 GB/day", "3 GB/day"];
+            const standardVals = ["28 Days", "56 Days", "84 Days", "365 Days"];
+            const unlimited = [];
+            const dataAddon = [];
+            for(let i=0; i<35; i++) {
+                unlimited.push({ amt: 239 + (i * 45), val: standardVals[i % 4], data: standardData[i % 5], calls: "Unlimited Calls", sms: "100 SMS/day", popular: i % 7 === 0 });
+            }
+            const dataPacks = [15, 19, 25, 29, 49, 58, 65, 98, 118, 148];
+            dataPacks.forEach((amt, idx) => {
+                dataAddon.push({ amt: amt, val: idx < 3 ? "1 Day" : "Existing Plan", data: (idx + 1) + " GB Total", calls: "Data Only", sms: "No SMS", popular: amt === 58 });
+            });
+            return { recommended: unlimited.slice(0, 8), unlimited, data: dataAddon };
+        };
 
+        const plans = { airtel: generatePlans('airtel'), jio: generatePlans('jio'), vi: generatePlans('vi') };
+
+        function toggleDropdown(e) { e.stopPropagation(); document.getElementById('operatorDropdown').classList.toggle('hidden'); }
+        function selectOperator(name, code) { 
+            document.getElementById('selectedDisplay').innerText = name; 
+            currentOperator = code; 
+            renderPlans(); 
+        }
+        function switchTab(tab, el) {
+            currentTab = tab;
+            document.querySelectorAll('#viewRecharge button').forEach(b => b.classList.remove('tab-active'));
+            el.classList.add('tab-active');
+            renderPlans();
+        }
+
+        function renderPlans() {
+            if(!currentOperator) return;
+            const container = document.getElementById('plansContainer');
+            container.innerHTML = plans[currentOperator][currentTab].map(plan => `
+                <div class="border border-gray-200 rounded p-4 bg-white shadow-sm">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold">₹${plan.amt}</span>
+                            ${plan.popular ? '<span class="bg-[#CC0C39] text-white text-[9px] px-1.5 py-0.5 font-bold rounded-sm uppercase">Popular</span>' : ''}
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] text-gray-400 font-bold uppercase">Validity</p>
+                            <p class="text-sm font-bold text-gray-800">${plan.val}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-y-2 mb-4">
+                        <div class="text-[11px] text-gray-600 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 fill-blue-500" viewBox="0 0 24 24"><path d="M21 16.5V7.5L12 2.5L3 7.5V16.5L12 21.5L21 16.5Z"/></svg>
+                            ${plan.data}
+                        </div>
+                        <div class="text-[11px] text-gray-600 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 fill-blue-500" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                            ${plan.calls}
+                        </div>
+                    </div>
+                    <button onclick="openPaymentSheet('Recharge', '₹${plan.amt}')" class="w-full amazon-orange py-2 rounded shadow-sm text-sm font-bold">Proceed</button>
+                </div>
+            `).join('');
+        }
+
+        // VIEW CONTROLLER
         function showView(id) {
             document.querySelectorAll('[id^="view"]').forEach(v => v.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
+            if(id === 'viewDashboard') {
+                document.getElementById('mainHeader').classList.remove('hidden');
+                document.getElementById('locationBar').classList.remove('hidden');
+            } else {
+                document.getElementById('mainHeader').classList.add('hidden');
+                document.getElementById('locationBar').classList.add('hidden');
+            }
             if(id === 'viewSubscriptions') renderSubs();
         }
+
+        // MONEY TRANSFER LOGIC
+        function processMoney(type) {
+            if(type === 'upi') {
+                globalTarget = document.getElementById('upiTarget').value;
+                globalAmount = "₹" + document.getElementById('upiAmount').value;
+            } else {
+                globalTarget = document.getElementById('bankName').value;
+                globalAmount = "₹" + document.getElementById('bankAmount').value;
+            }
+            globalMode = type.toUpperCase();
+            openPaymentSheet(globalMode + " Transfer", globalAmount);
+        }
+
+        // PAYMENT SHEET & FLOW
+        function openPaymentSheet(title, amt) {
+            if(title === 'Recharge') {
+                const mobile = document.getElementById('mobileInput').value;
+                if (!mobile || mobile.length < 10) {
+                    document.getElementById('validationAlert').classList.remove('hidden');
+                    window.scrollTo(0,0);
+                    return;
+                }
+                globalTarget = mobile;
+                globalMode = "Recharge";
+            }
+            globalAmount = amt;
+            document.getElementById('psTitle').innerText = title;
+            document.getElementById('psAmt').innerText = amt;
+            document.getElementById('paySheet').classList.remove('hidden');
+        }
+
+        function triggerPaymentFlow() {
+            document.getElementById('paySheet').classList.add('hidden');
+            document.getElementById('screenLoading').classList.remove('hidden');
+            const loadText = document.getElementById('loadMsg');
+            
+            setTimeout(() => loadText.innerText = "Waiting for bank confirmation...", 1500);
+            setTimeout(() => loadText.innerText = "Finalizing transaction...", 3000);
+            
+            setTimeout(() => {
+                document.getElementById('screenLoading').classList.add('hidden');
+                document.getElementById('screenSuccess').classList.remove('hidden');
+                document.getElementById('succAmt').innerText = globalAmount;
+                document.getElementById('succRef').innerText = globalTarget;
+                document.getElementById('succMsg').innerText = globalMode + " Successful";
+            }, 4500);
+        }
+
+        // SUBSCRIPTIONS
+        const subs = [
+            { name: "Zomato Gold", price: "₹599", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwugYjkStrKCv4hgND62XXlNMsVG4uXEmj9A&s" },
+            { name: "Amazon Music", price: "₹99", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSZ0i30X3lujSPpfFHJPmbcAehSf63jxqPzzg&s" }
+        ];
 
         function renderSubs() {
             document.getElementById('subList').innerHTML = subs.map(s => `
@@ -207,46 +358,12 @@
                         <img src="${s.logo}" class="w-10 h-10 rounded">
                         <p class="text-sm font-bold">${s.name}</p>
                     </div>
-                    <button onclick="openPaymentSheet('${s.name}', '${s.price}')" class="amazon-orange px-3 py-1.5 rounded text-[10px] font-bold">${s.price}</button>
+                    <button onclick="openPaymentSheet('${s.name}', '${s.price}')" class="amazon-orange px-3 py-1.5 rounded text-[10px] font-bold">BUY</button>
                 </div>
             `).join('');
         }
 
-        function processTransfer(type) {
-            if(type === 'upi') {
-                globalTarget = document.getElementById('upiTarget').value;
-                globalAmount = "₹" + document.getElementById('upiAmount').value;
-                if(!globalTarget || globalAmount === "₹") return alert("Enter details");
-            } else {
-                globalTarget = document.getElementById('bankName').value + " (" + document.getElementById('bankAcc').value.slice(-4) + ")";
-                globalAmount = "₹" + document.getElementById('bankAmount').value;
-                if(!document.getElementById('bankAcc').value) return alert("Enter Account Number");
-            }
-            openPaymentSheet("Money Transfer", globalAmount);
-        }
-
-        function openPaymentSheet(title, amt) {
-            globalAmount = amt;
-            document.getElementById('psTitle').innerText = title;
-            document.getElementById('psAmt').innerText = amt;
-            document.getElementById('paySheet').classList.remove('hidden');
-        }
-
-        function executeFinal() {
-            document.getElementById('paySheet').classList.add('hidden');
-            document.getElementById('screenLoading').classList.remove('hidden');
-            const loadText = document.getElementById('loadMsg');
-            
-            setTimeout(() => loadText.innerText = "Securing Bank Connection...", 1500);
-            setTimeout(() => loadText.innerText = "Finalizing Transaction...", 3000);
-            
-            setTimeout(() => {
-                document.getElementById('screenLoading').classList.add('hidden');
-                document.getElementById('screenSuccess').classList.remove('hidden');
-                document.getElementById('succAmt').innerText = globalAmount;
-                document.getElementById('succTo').innerText = globalTarget || "Amazon Services";
-            }, 4500);
-        }
+        window.onclick = function() { document.getElementById('operatorDropdown').classList.add('hidden'); }
     </script>
 </body>
 </html>
