@@ -3,254 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amazon Pay - Mobile Recharge</title>
+    <title>Amazon Pay - Version 2.1.1</title>
     <link rel="icon" type="image/png" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKMIAlQeY5jFr8rjj6bV8QT9RAvnViGp0CBw&s">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
-        body { font-family: 'Open Sans', sans-serif; background-color: #f7f7f7; color: #111; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Open Sans', sans-serif; background-color: #f2f2f2; color: #111; user-select: none; -webkit-tap-highlight-color: transparent; }
         .amazon-dark { background-color: #232f3e; }
         .amazon-secondary { background-color: #37475a; }
         .amazon-orange { background: linear-gradient(to bottom, #f8c269, #f4a216); border: 1px solid #c48312; box-shadow: 0 1px 0 rgba(255,255,255,.4) inset; }
         .tab-active { border-bottom: 3px solid #e47911; color: #e47911; font-weight: bold; }
         .hidden { display: none !important; }
-        .custom-select-box { position: relative; border: 1px solid #a6a6a6; border-radius: 4px; padding: 12px; cursor: pointer; background: white; }
-        .dropdown-menu { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #a6a6a6; border-top: none; z-index: 50; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .dropdown-item { padding: 12px; font-size: 15px; border-bottom: 1px solid #eee; }
-        .error-popup { border-top: 4px solid #d0021b; box-shadow: 0 2px 4px rgba(0,0,0,0.13); }
+        .pay-card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 12px; }
+        .service-icon { width: 48px; height: 48px; object-fit: contain; margin-bottom: 6px; }
         
-        /* Amazon Spinner Animation */
+        input { border: 1px solid #a6a6a6; border-radius: 4px; padding: 10px; width: 100%; font-size: 14px; outline: none; }
+        input:focus { border-color: #e47911; box-shadow: 0 0 3px rgba(228, 121, 17, 0.5); }
+
         .amazon-spinner {
-            width: 40px; height: 40px;
-            border: 3px solid #eee;
-            border-top: 3px solid #e47911;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            width: 40px; height: 40px; border: 3px solid #eee; border-top: 3px solid #e47911;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         .slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
-<body class="pb-24">
+<body class="pb-20">
 
-    <div id="rechargeHome">
-        <header class="amazon-dark text-white px-4 py-3 flex justify-between items-center">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Amazon_Pay_logo.svg/960px-Amazon_Pay_logo.svg.png" class="h-5 brightness-0 invert" alt="Amazon Pay">
-            <div class="text-right">
-                <p class="text-[10px] text-gray-400">Balance</p>
-                <p class="text-sm font-bold">₹0.00</p>
-            </div>
-        </header>
-
-        <div class="amazon-secondary text-white text-[11px] py-2.5 px-4 flex items-center gap-2">
-            <svg class="w-3.5 h-3.5 fill-red-400" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-            <span>Mumbai 400001 - Update Location</span>
+    <header class="amazon-dark text-white px-4 py-3 flex justify-between items-center">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Amazon_Pay_logo.svg/960px-Amazon_Pay_logo.svg.png" class="h-5 brightness-0 invert" alt="Amazon Pay">
+        <div class="text-right">
+            <p class="text-[10px] text-gray-400 uppercase">Balance</p>
+            <p class="text-sm font-bold">₹0.00</p>
         </div>
+    </header>
 
-        <main class="max-w-md mx-auto bg-white min-h-screen">
-            <div id="validationAlert" class="hidden mx-5 mt-4 p-4 bg-white border error-popup flex items-start gap-3">
-                <svg class="w-6 h-6 fill-red-600 flex-shrink-0" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                <div class="text-xs">
-                    <p class="font-bold text-red-600">Action Required</p>
-                    <p>Enter a valid 10-digit mobile number.</p>
-                </div>
-            </div>
-
-            <div class="p-5">
-                <h2 class="text-lg font-bold text-gray-800 mb-6">Mobile Recharge</h2>
-                <div class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Mobile Number</label>
-                        <input type="tel" id="mobileInput" maxlength="10" placeholder="Enter 10-digit mobile number" class="w-full border border-gray-400 rounded px-3 py-2.5 text-base outline-none focus:border-[#e47911]">
+    <div id="viewDashboard">
+        <div class="amazon-secondary text-[11px] text-white py-2 px-4 flex items-center gap-2">
+            <svg class="w-3 h-3 fill-red-400" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            <span>Mumbai 400001</span>
+        </div>
+        <main class="max-w-md mx-auto p-3">
+            <div class="pay-card p-4">
+                <h3 class="text-sm font-bold mb-4">Recharge & Pay Bills</h3>
+                <div class="grid grid-cols-4 gap-2 text-center">
+                    <div onclick="showView('viewRecharge')" class="flex flex-col items-center cursor-pointer">
+                        <img src="https://m.media-amazon.com/images/G/31/img22/Apay/Icons/IconWidgetV2/New/125x125_icon_Subtle_Yellow_copy_Ins_Premium._CB629948471_.png" class="service-icon">
+                        <span class="text-[10px] font-bold">Mobile</span>
                     </div>
-                    <div class="relative">
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Operator & Circle</label>
-                        <div class="custom-select-box flex justify-between items-center" onclick="toggleDropdown(event)">
-                            <span id="selectedDisplay" class="text-sm text-gray-700">Select operator</span>
-                            <span class="text-blue-600 text-xs font-bold">EDIT</span>
-                            <div id="operatorDropdown" class="dropdown-menu hidden">
-                                <div class="dropdown-item" onclick="selectOperator('Airtel - Mumbai', 'airtel')">Airtel - Mumbai</div>
-                                <div class="dropdown-item" onclick="selectOperator('Jio - Mumbai', 'jio')">Jio - Mumbai</div>
-                                <div class="dropdown-item" onclick="selectOperator('Vi - Mumbai', 'vi')">Vi - Mumbai</div>
-                            </div>
-                        </div>
+                    <div onclick="openPaymentSheet('Electricity', '₹1,240')" class="flex flex-col items-center cursor-pointer">
+                        <img src="https://gpcdn.ams3.cdn.digitaloceanspaces.com/deals/amazon-electricity-bill-payment-offer-08-11-2022.jpg" class="service-icon">
+                        <span class="text-[10px] font-bold">Electricity</span>
+                    </div>
+                    <div onclick="showView('viewSendMoney')" class="flex flex-col items-center cursor-pointer">
+                        <img src="https://i.ibb.co/gL3mCcvb/Screenshot-20260409-183837-Amazon.jpg" class="service-icon">
+                        <span class="text-[10px] font-bold">Send Money</span>
+                    </div>
+                    <div onclick="showView('viewSubscriptions')" class="flex flex-col items-center cursor-pointer">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcThSqsoapU0V9RfxJJ8pDTF0dJA9AuN4qhwpw&s" class="service-icon">
+                        <span class="text-[10px] font-bold">Subscriptions</span>
                     </div>
                 </div>
-            </div>
-
-            <div class="mt-4 flex border-b border-gray-200 px-5 text-[11px] font-bold text-gray-500 uppercase overflow-x-auto">
-                <button onclick="switchTab('recommended', this)" class="pb-2 px-3 tab-active whitespace-nowrap">Recommended</button>
-                <button onclick="switchTab('unlimited', this)" class="pb-2 px-5 whitespace-nowrap">Unlimited</button>
-                <button onclick="switchTab('data', this)" class="pb-2 px-5 whitespace-nowrap">Data Add-On</button>
-            </div>
-
-            <div class="p-5 space-y-4" id="plansContainer">
-                <p class="text-center text-gray-400 text-sm py-10">Select an operator to see plans</p>
             </div>
         </main>
     </div>
 
-    <div id="loadingOverlay" class="hidden fixed inset-0 z-[300] bg-white flex flex-col items-center justify-center p-6 text-center">
-        <div class="amazon-spinner mb-4"></div>
-        <h3 class="font-bold text-lg text-gray-800" id="loadingText">Processing payment...</h3>
-        <p class="text-sm text-gray-500 mt-2">Please do not close the app or press back</p>
+    <div id="viewSendMoney" class="hidden min-h-screen bg-white">
+        <div class="p-4 flex items-center gap-3 border-b">
+            <button onclick="showView('viewDashboard')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+            <h2 class="font-bold">Send Money</h2>
+        </div>
+        <div class="p-4 space-y-4">
+            <div onclick="showView('viewUPITransfer')" class="flex items-center gap-4 p-4 border rounded-lg active:bg-gray-50 cursor-pointer">
+                <img src="https://images.icon-icons.com/2699/PNG/512/upi_logo_icon_170312.png" class="w-12 h-12">
+                <div>
+                    <p class="font-bold text-sm">To UPI ID or Number</p>
+                    <p class="text-xs text-gray-500">Send instantly to any UPI app</p>
+                </div>
+            </div>
+            <div onclick="showView('viewBankTransfer')" class="flex items-center gap-4 p-4 border rounded-lg active:bg-gray-50 cursor-pointer">
+                <img src="https://i.ibb.co/9mCKX9p6/bank-transfer-icon.png" class="w-12 h-12" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2830/2830284.png'">
+                <div>
+                    <p class="font-bold text-sm">To Bank Account</p>
+                    <p class="text-xs text-gray-500">Send using A/C number & IFSC</p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="successPage" class="hidden fixed inset-0 z-[200] bg-white overflow-y-auto">
+    <div id="viewUPITransfer" class="hidden min-h-screen bg-white">
+        <div class="p-4 flex items-center gap-3 border-b">
+            <button onclick="showView('viewSendMoney')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+            <h2 class="font-bold">Send to UPI</h2>
+        </div>
+        <div class="p-5 space-y-5">
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Enter UPI ID or Mobile Number</label>
+                <input type="text" id="upiTarget" placeholder="e.g. 9876543210 or name@apl">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Amount</label>
+                <input type="number" id="upiAmount" placeholder="₹ Enter Amount">
+            </div>
+            <button onclick="processTransfer('upi')" class="w-full amazon-orange py-3 rounded font-bold">Continue</button>
+        </div>
+    </div>
+
+    <div id="viewBankTransfer" class="hidden min-h-screen bg-white">
+        <div class="p-4 flex items-center gap-3 border-b">
+            <button onclick="showView('viewSendMoney')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+            <h2 class="font-bold">Bank Transfer</h2>
+        </div>
+        <div class="p-5 space-y-4">
+            <input type="number" id="bankAcc" placeholder="Account Number">
+            <input type="number" id="bankAccRe" placeholder="Re-enter Account Number">
+            <input type="text" id="bankIfsc" placeholder="IFSC Code" class="uppercase">
+            <input type="text" id="bankName" placeholder="Account Holder Name">
+            <input type="number" id="bankAmount" placeholder="₹ Amount">
+            <button onclick="processTransfer('bank')" class="w-full amazon-orange py-3 rounded font-bold">Proceed to Pay</button>
+        </div>
+    </div>
+
+    <div id="viewRecharge" class="hidden min-h-screen bg-white">
+        <div class="p-4 flex items-center gap-3 border-b">
+            <button onclick="showView('viewDashboard')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+            <h2 class="font-bold">Mobile Recharge</h2>
+        </div>
+        <div class="p-5">
+            <input type="tel" id="mobNum" placeholder="10-digit number" maxlength="10" class="mb-4">
+            <div id="planList" class="space-y-3">
+                <div onclick="openPaymentSheet('Mobile Recharge', '₹239')" class="border p-4 rounded flex justify-between items-center">
+                    <span>₹239 - 1.5GB/Day</span><span class="text-blue-600 font-bold">SELECT</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewSubscriptions" class="hidden min-h-screen bg-gray-50">
+        <div class="bg-white p-4 flex items-center gap-3 border-b">
+            <button onclick="showView('viewDashboard')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+            <h2 class="font-bold">Subscriptions</h2>
+        </div>
+        <div id="subList" class="p-3 space-y-3"></div>
+    </div>
+
+    <div id="paySheet" class="fixed inset-0 bg-black bg-opacity-60 z-[100] hidden flex items-end">
+        <div class="bg-white w-full max-w-md mx-auto rounded-t-2xl p-6 slide-up">
+            <h3 class="font-bold text-lg" id="psTitle">Pay</h3>
+            <p class="text-2xl font-bold mb-6" id="psAmt">₹0</p>
+            <div class="flex items-center gap-3 p-4 border-2 border-[#e47911] bg-orange-50 rounded-lg">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKMIAlQeY5jFr8rjj6bV8QT9RAvnViGp0CBw&s" class="h-6">
+                <div class="flex-1 text-sm font-bold">Amazon Pay UPI</div>
+                <input type="radio" checked class="accent-[#e47911] w-5 h-5">
+            </div>
+            <button onclick="executeFinal()" class="w-full amazon-orange py-4 rounded font-bold mt-8 shadow-md">Pay Now</button>
+        </div>
+    </div>
+
+    <div id="screenLoading" class="hidden fixed inset-0 z-[500] bg-white flex flex-col items-center justify-center p-8 text-center">
+        <div class="amazon-spinner mb-4"></div>
+        <h3 class="font-bold text-lg" id="loadMsg">Processing...</h3>
+    </div>
+
+    <div id="screenSuccess" class="hidden fixed inset-0 z-[400] bg-white overflow-y-auto">
         <div class="max-w-md mx-auto py-12 text-center">
             <div class="w-20 h-20 bg-[#007600] rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg class="w-12 h-12 fill-white" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800">Recharge Successful</h2>
-            <div class="mt-4 text-4xl font-bold" id="successAmt">₹0</div>
+            <h2 class="text-2xl font-bold">Transfer Successful</h2>
+            <div class="mt-4 text-4xl font-bold" id="succAmt">₹0</div>
             <div class="p-6 mt-8">
-                <div class="bg-gray-50 p-6 rounded-lg border text-left space-y-4">
-                    <div class="flex justify-between text-sm text-gray-600"><span>Mobile Number</span><span class="font-bold text-gray-900" id="finalNumber">--</span></div>
-                    <div class="flex justify-between text-sm text-gray-600"><span>Operator</span><span class="font-bold text-gray-900" id="finalOp">--</span></div>
-                    <div class="flex justify-between text-sm text-gray-600"><span>Status</span><span class="font-bold text-green-700">Confirmed</span></div>
+                <div class="bg-gray-50 p-6 rounded border text-left space-y-3">
+                    <div class="flex justify-between text-sm"><span>To</span><span class="font-bold" id="succTo">--</span></div>
+                    <div class="flex justify-between text-sm"><span>Transaction ID</span><span class="font-bold">AMZ83920112</span></div>
                 </div>
-                <button onclick="window.location.reload()" class="w-full amazon-orange py-4 rounded-lg shadow-md font-bold text-lg mt-10">Done</button>
+                <button onclick="window.location.reload()" class="w-full amazon-orange py-4 rounded font-bold mt-10">Done</button>
             </div>
         </div>
     </div>
-
-    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-60 z-[100] hidden flex items-end">
-        <div class="bg-white w-full max-w-md mx-auto rounded-t-2xl p-6 slide-up">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold text-lg">Select a payment method</h3>
-                <button onclick="closePayment()" class="text-2xl text-gray-400">&times;</button>
-            </div>
-            <label class="flex items-center gap-3 p-4 border-2 border-[#e47911] bg-orange-50 rounded-lg">
-                <input type="radio" checked class="w-5 h-5 accent-[#e47911]">
-                <div class="flex-1 text-sm font-bold">Amazon Pay UPI</div>
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKMIAlQeY5jFr8rjj6bV8QT9RAvnViGp0CBw&s" class="h-6">
-            </label>
-            <button onclick="triggerPaymentFlow()" class="w-full amazon-orange py-4 rounded-lg shadow-md font-bold mt-8">Pay Now</button>
-        </div>
-    </div>
-
-    <nav id="bottomNav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-2 flex justify-between items-center max-w-md mx-auto text-[10px] font-bold text-gray-400">
-        <div class="flex flex-col items-center gap-1"><svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><p>Home</p></div>
-        <div class="flex flex-col items-center gap-1 text-[#e47911]"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKMIAlQeY5jFr8rjj6bV8QT9RAvnViGp0CBw&s" class="w-5 h-5"><p>Amazon Pay</p></div>
-        <div class="flex flex-col items-center gap-1"><svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg><p>Cart</p></div>
-        <div class="flex flex-col items-center gap-1"><svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg><p>Menu</p></div>
-    </nav>
 
     <script>
-        let currentTab = 'recommended';
-        let currentOperator = null;
-        let selectedAmount = 0;
+        let globalTarget = "";
+        let globalAmount = "";
 
-        const generatePlans = (op) => {
-            const standardData = ["1.5 GB/day", "2 GB/day", "2.5 GB/day", "1 GB/day", "3 GB/day"];
-            const standardVals = ["28 Days", "56 Days", "84 Days", "365 Days"];
-            const unlimited = [];
-            const dataAddon = [];
-            for(let i=0; i<35; i++) {
-                unlimited.push({ amt: 239 + (i * 45), val: standardVals[i % 4], data: standardData[i % 5], calls: "Unlimited Calls", sms: "100 SMS/day", popular: i % 7 === 0 });
-            }
-            const dataPacks = [15, 19, 25, 29, 49, 58, 65, 98, 118, 148];
-            dataPacks.forEach((amt, idx) => {
-                dataAddon.push({ amt: amt, val: idx < 3 ? "1 Day" : "Existing Plan", data: (idx + 1) + " GB Total", calls: "Data Only", sms: "No SMS", popular: amt === 58 });
-            });
-            return { recommended: unlimited.slice(0, 8), unlimited, data: dataAddon };
-        };
+        const subs = [
+            { name: "Zomato Gold", price: "₹599", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwugYjkStrKCv4hgND62XXlNMsVG4uXEmj9A&s" },
+            { name: "Amazon Music", price: "₹99", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSZ0i30X3lujSPpfFHJPmbcAehSf63jxqPzzg&s" },
+            { name: "Prime Video", price: "₹1,499", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6-tJozVRNuVzG6JiAJaVcIe6BI8WhUPf6gA&s" },
+            { name: "AWS Pro", price: "₹2,100", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1emPM3lvqT08lRlyOhcGj8Gc_xB7UfU98Fg&s" }
+        ];
 
-        const plans = { airtel: generatePlans('airtel'), jio: generatePlans('jio'), vi: generatePlans('vi') };
-
-        function toggleDropdown(e) { e.stopPropagation(); document.getElementById('operatorDropdown').classList.toggle('hidden'); }
-        function selectOperator(name, code) { 
-            document.getElementById('selectedDisplay').innerText = name; 
-            currentOperator = code; 
-            renderPlans(); 
-        }
-        function switchTab(tab, el) {
-            currentTab = tab;
-            document.querySelectorAll('button').forEach(b => b.classList.remove('tab-active'));
-            el.classList.add('tab-active');
-            renderPlans();
+        function showView(id) {
+            document.querySelectorAll('[id^="view"]').forEach(v => v.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            if(id === 'viewSubscriptions') renderSubs();
         }
 
-        function renderPlans() {
-            if(!currentOperator) return;
-            const container = document.getElementById('plansContainer');
-            container.innerHTML = plans[currentOperator][currentTab].map(plan => `
-                <div class="border border-gray-200 rounded p-4 bg-white shadow-sm">
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-2xl font-bold">₹${plan.amt}</span>
-                            ${plan.popular ? '<span class="bg-[#CC0C39] text-white text-[9px] px-1.5 py-0.5 font-bold rounded-sm uppercase">Popular</span>' : ''}
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[9px] text-gray-400 font-bold uppercase">Validity</p>
-                            <p class="text-sm font-bold text-gray-800">${plan.val}</p>
-                        </div>
+        function renderSubs() {
+            document.getElementById('subList').innerHTML = subs.map(s => `
+                <div class="pay-card p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <img src="${s.logo}" class="w-10 h-10 rounded">
+                        <p class="text-sm font-bold">${s.name}</p>
                     </div>
-                    <div class="grid grid-cols-2 gap-y-2 mb-4">
-                        <div class="text-[11px] text-gray-600 flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5 fill-blue-500" viewBox="0 0 24 24"><path d="M21 16.5V7.5L12 2.5L3 7.5V16.5L12 21.5L21 16.5Z"/></svg>
-                            ${plan.data}
-                        </div>
-                        <div class="text-[11px] text-gray-600 flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5 fill-blue-500" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-                            ${plan.calls}
-                        </div>
-                        <div class="text-[11px] text-gray-600 flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5 fill-blue-500" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-                            ${plan.sms}
-                        </div>
-                    </div>
-                    <button onclick="handleRecharge(${plan.amt})" class="w-full amazon-orange py-2 rounded shadow-sm text-sm font-bold">Proceed to Recharge</button>
+                    <button onclick="openPaymentSheet('${s.name}', '${s.price}')" class="amazon-orange px-3 py-1.5 rounded text-[10px] font-bold">${s.price}</button>
                 </div>
             `).join('');
         }
 
-        function handleRecharge(amt) {
-            const mobile = document.getElementById('mobileInput').value;
-            if (!mobile || mobile.length < 10 || isNaN(mobile)) {
-                document.getElementById('validationAlert').classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                return;
+        function processTransfer(type) {
+            if(type === 'upi') {
+                globalTarget = document.getElementById('upiTarget').value;
+                globalAmount = "₹" + document.getElementById('upiAmount').value;
+                if(!globalTarget || globalAmount === "₹") return alert("Enter details");
+            } else {
+                globalTarget = document.getElementById('bankName').value + " (" + document.getElementById('bankAcc').value.slice(-4) + ")";
+                globalAmount = "₹" + document.getElementById('bankAmount').value;
+                if(!document.getElementById('bankAcc').value) return alert("Enter Account Number");
             }
-            document.getElementById('validationAlert').classList.add('hidden');
-            selectedAmount = amt;
-            document.getElementById('paymentModal').classList.remove('hidden');
+            openPaymentSheet("Money Transfer", globalAmount);
         }
 
-        function closePayment() { document.getElementById('paymentModal').classList.add('hidden'); }
+        function openPaymentSheet(title, amt) {
+            globalAmount = amt;
+            document.getElementById('psTitle').innerText = title;
+            document.getElementById('psAmt').innerText = amt;
+            document.getElementById('paySheet').classList.remove('hidden');
+        }
 
-        function triggerPaymentFlow() {
-            document.getElementById('paymentModal').classList.add('hidden');
-            document.getElementById('loadingOverlay').classList.remove('hidden');
+        function executeFinal() {
+            document.getElementById('paySheet').classList.add('hidden');
+            document.getElementById('screenLoading').classList.remove('hidden');
+            const loadText = document.getElementById('loadMsg');
             
-            const statusText = document.getElementById('loadingText');
+            setTimeout(() => loadText.innerText = "Securing Bank Connection...", 1500);
+            setTimeout(() => loadText.innerText = "Finalizing Transaction...", 3000);
             
-            // Step 1: Payment Processing
             setTimeout(() => {
-                statusText.innerText = "Waiting for bank confirmation...";
-            }, 1500);
-
-            // Step 2: Finalizing Order
-            setTimeout(() => {
-                statusText.innerText = "Finalizing recharge...";
-            }, 3000);
-
-            // Step 3: Success Screen
-            setTimeout(() => {
-                document.getElementById('loadingOverlay').classList.add('hidden');
-                document.getElementById('rechargeHome').classList.add('hidden');
-                document.getElementById('bottomNav').classList.add('hidden');
-                document.getElementById('successPage').classList.remove('hidden');
-                document.getElementById('successAmt').innerText = '₹' + selectedAmount;
-                document.getElementById('finalNumber').innerText = document.getElementById('mobileInput').value;
-                document.getElementById('finalOp').innerText = document.getElementById('selectedDisplay').innerText;
-                window.scrollTo(0,0);
+                document.getElementById('screenLoading').classList.add('hidden');
+                document.getElementById('screenSuccess').classList.remove('hidden');
+                document.getElementById('succAmt').innerText = globalAmount;
+                document.getElementById('succTo').innerText = globalTarget || "Amazon Services";
             }, 4500);
         }
-
-        window.onclick = function() { document.getElementById('operatorDropdown').classList.add('hidden'); }
     </script>
 </body>
 </html>
